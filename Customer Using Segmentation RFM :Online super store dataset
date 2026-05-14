@@ -1,0 +1,272 @@
+# Customer-Using-Segmentation-RFM-Online-super-store-dataset
+Customer Segmentation using RFM Analysis on Online Super Store Dataset using SQL, Python, and Power BI. Includes customer behavior analysis, RFM segmentation, KPI dashboards, business insights, and interactive data visualization.
+📊 Customer Segmentation using RFM Analysis
+## 🛒 Online Super Store Dataset
+
+---
+
+# 📌 Project Overview
+
+This project focuses on Customer Segmentation using RFM Analysis on the Online Super Store dataset using SQL, Python, and Power BI.
+
+The project helps businesses analyze customer purchasing behavior and identify valuable customers using:
+
+✅ Recency  
+✅ Frequency  
+✅ Monetary Value  
+
+The project also includes interactive dashboards, KPI analysis, customer insights, and business intelligence reporting.
+
+---
+
+# 🎯 Project Objectives
+
+1. Analyze customer purchasing behavior  
+2. Perform RFM customer segmentation  
+3. Identify high value customers  
+4. Improve customer retention strategies  
+5. Generate business insights  
+6. Create interactive Power BI dashboards  
+7. Support business intelligence reporting  
+
+---
+
+# 🛠 Tools and Technologies
+
+| Tool | Purpose |
+|---|---|
+| SQL | Data querying and transformation |
+| Python | Data preprocessing and analysis |
+| Power BI | Dashboard visualization |
+| Excel | Dataset handling |
+| Pandas | Data manipulation |
+| NumPy | Numerical calculations |
+| Matplotlib | Data visualization |
+
+---
+
+# 📂 Dataset Description
+
+The Online Super Store dataset contains:
+
+1. Customer Information  
+2. Product Details  
+3. Sales Data  
+4. Profit Information  
+5. Shipping Data  
+6. Regional Information  
+
+---
+
+# 🧹 Data Cleaning
+
+Data cleaning steps performed in the project:
+
+✅ Removed null values  
+✅ Removed duplicate records  
+✅ Corrected data types  
+✅ Converted date columns  
+✅ Standardized column names  
+
+---
+
+# 🔄 Data Transformation
+
+Transformation techniques used:
+
+1. Data formatting  
+2. Aggregation operations  
+3. Derived columns  
+4. Customer level summarization  
+5. Date transformations  
+
+---
+
+# ⭐ Star Schema Modeling
+
+The project uses Star Schema architecture for analytical reporting.
+
+## Fact Table
+
+1. Fact_Sales  
+
+## Dimension Tables
+
+1. Dim_Customer  
+2. Dim_Product  
+3. Dim_Date  
+4. Dim_Region  
+5. Dim_Shipment  
+
+---
+
+# 📈 RFM Analysis
+
+## What is RFM Analysis?
+
+RFM Analysis is a customer segmentation technique based on:
+
+| Metric | Description |
+|---|---|
+| Recency | How recently customer purchased |
+| Frequency | How often customer purchases |
+| Monetary | How much customer spends |
+
+---
+
+# 👥 Customer Segments
+
+## 🏆 Premium Customers
+
+High Recency  
+High Frequency  
+High Monetary Value  
+
+## ❤️ Loyal Customers
+
+Frequent customers with strong engagement.
+
+## 📈 Potential Customers
+
+Customers with future growth potential.
+
+## ⚠️ At Risk Customers
+
+Customers showing declining activity.
+
+## ❌ Lost Customers
+
+Inactive customers with low engagement.
+
+---
+
+# 💻 SQL Implementation
+
+SQL operations performed:
+
+✅ Database creation  
+✅ Table creation  
+✅ Data cleaning queries  
+✅ Aggregation queries  
+✅ JOIN operations  
+✅ RFM calculations  
+✅ Analytical reporting  
+
+---
+
+# 🐍 Python Implementation
+
+## Python Libraries Used
+
+```python
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+import seaborn as sns
+Python Operations
+
+✅ Data preprocessing
+✅ Missing value handling
+✅ Duplicate removal
+✅ Exploratory Data Analysis
+✅ RFM calculation
+✅ Customer segmentation
+✅ Visualization
+
+📊 Power BI Dashboard
+Dashboard Features
+
+✅ KPI Cards
+✅ Sales Analysis
+✅ Profit Analysis
+✅ Customer Segmentation
+✅ Regional Analysis
+✅ Interactive Filters
+✅ Charts and Visualizations
+
+📈 Key Insights
+Customer Insights
+Premium customers generated major revenue
+Loyal customers improved repeat purchases
+At risk customers required retention strategies
+Sales Insights
+Technology category generated highest sales
+Regional performance varied significantly
+Seasonal trends affected revenue
+Profit Insights
+High sales did not always generate high profit
+Discounts reduced profitability in some categories
+🚀 Business Benefits
+
+✅ Better customer understanding
+✅ Improved marketing strategies
+✅ Increased customer retention
+✅ Better sales forecasting
+✅ Improved profitability
+✅ Enhanced business intelligence reporting
+
+🔮 Future Scope
+
+Future enhancements may include:
+
+Machine Learning integration
+Customer churn prediction
+AI based recommendation systems
+Real time dashboards
+Cloud analytics integration
+Predictive analytics
+📷 Dashboard Preview
+
+Add Power BI dashboard screenshots here.
+
+Example:
+
+/dashboard_screenshots/sales_dashboard.png
+/dashboard_screenshots/rfm_dashboard.png
+📁 Project Structure
+Customer Segmentation RFM Project/
+│
+├── Dataset/
+├── SQL Files/
+├── Python Files/
+├── Power BI Dashboard/
+├── Dashboard Screenshots/
+├── Documentation/
+└── README.md
+📚 Learning Outcomes
+
+This project helped improve skills in:
+
+✅ SQL
+✅ Python
+✅ Power BI
+✅ Data Cleaning
+✅ Business Intelligence
+✅ Customer Analytics
+✅ Dashboard Development
+✅ RFM Customer Segmentation
+
+🎓 Conclusion
+
+The project successfully implemented Customer Segmentation using RFM Analysis on the Online Super Store dataset using SQL, Python, and Power BI.
+
+The project transformed raw customer transaction data into meaningful business insights and interactive dashboards that support customer retention, profitability analysis, and business intelligence reporting.
+
+🙌 Acknowledgement
+
+Thanks to all learning resources, documentation platforms, and analytical communities that supported the completion of this project.
+
+📬 Contact
+Your Name :G .Upendrachary
+
+Data Analytics Enthusiast 🚀
+
+
+
+
+GitHub: https://github.com/omsaib064-rgb/50--days-coding-challenge.git
+LinkedIn: https://www.linkedin.com/in/guggilla-upendrachary-47b38a39b?utm_source=share&utm_campaign=share_via&utm_content=profile&utm_medium=android_app
+
+
+☸️☸️☸️☸️☸️PROJECT LINK☸️☸️☸️☸️☸️
+🎯🎯🎯https://drive.google.com/drive/folders/1nQ4HXxuAF8Y51ivs5nIpW_irwzTMjogM?usp=sharing
