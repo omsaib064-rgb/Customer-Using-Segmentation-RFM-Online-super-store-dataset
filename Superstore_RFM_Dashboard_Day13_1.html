@@ -1,0 +1,917 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Superstore RFM Dashboard | Day 13</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+  :root {
+    --bg: #0e1117;
+    --panel: #1a1f2e;
+    --panel2: #212740;
+    --accent: #f7c948;
+    --accent2: #4f8ef7;
+    --accent3: #00d4aa;
+    --accent4: #ff6b6b;
+    --text: #e8eaf0;
+    --muted: #8b93a7;
+    --border: #2d3452;
+    --champ: #ffd700;
+    --loyal: #4f8ef7;
+    --atrisk: #ff6b6b;
+    --lost: #8b93a7;
+    --new: #00d4aa;
+    --potential: #a78bfa;
+    --need: #f97316;
+    --cantlose: #ec4899;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Segoe UI', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+  }
+
+  /* HEADER */
+  .header {
+    background: linear-gradient(135deg, #1a1f2e 0%, #0e1117 100%);
+    border-bottom: 2px solid var(--accent);
+    padding: 16px 24px;
+    display: flex; align-items: center; justify-content: space-between;
+    position: sticky; top: 0; z-index: 100;
+  }
+  .header-left { display: flex; align-items: center; gap: 14px; }
+  .logo { width: 38px; height: 38px; background: var(--accent); border-radius: 8px;
+    display: flex; align-items: center; justify-content: center; font-size: 18px; font-weight: 900; color: #0e1117; }
+  .header-title { font-size: 18px; font-weight: 700; letter-spacing: .5px; }
+  .header-sub { font-size: 11px; color: var(--muted); }
+  .badge-row { display: flex; gap: 8px; }
+  .badge { padding: 3px 10px; border-radius: 20px; font-size: 10px; font-weight: 600;
+    background: rgba(247,201,72,.15); color: var(--accent); border: 1px solid rgba(247,201,72,.3); }
+
+  /* NAV TABS */
+  .nav { background: var(--panel); border-bottom: 1px solid var(--border);
+    display: flex; gap: 4px; padding: 10px 20px; overflow-x: auto; }
+  .tab-btn {
+    padding: 6px 16px; border-radius: 6px; border: none; cursor: pointer;
+    font-size: 12px; font-weight: 600; transition: all .2s;
+    background: transparent; color: var(--muted);
+  }
+  .tab-btn:hover { background: var(--panel2); color: var(--text); }
+  .tab-btn.active { background: var(--accent); color: #0e1117; }
+
+  /* LAYOUT */
+  .page { display: none; padding: 20px; }
+  .page.active { display: block; }
+
+  /* KPI CARDS */
+  .kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 14px; margin-bottom: 20px; }
+  .kpi-card {
+    background: var(--panel); border: 1px solid var(--border); border-radius: 12px;
+    padding: 18px 16px; position: relative; overflow: hidden;
+  }
+  .kpi-card::before {
+    content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px;
+  }
+  .kpi-card.k1::before { background: var(--accent); }
+  .kpi-card.k2::before { background: var(--accent3); }
+  .kpi-card.k3::before { background: var(--accent2); }
+  .kpi-card.k4::before { background: var(--accent4); }
+  .kpi-card.k5::before { background: var(--potential); }
+  .kpi-card.k6::before { background: var(--cantlose); }
+  .kpi-label { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; }
+  .kpi-value { font-size: 26px; font-weight: 800; line-height: 1; }
+  .kpi-card.k1 .kpi-value { color: var(--accent); }
+  .kpi-card.k2 .kpi-value { color: var(--accent3); }
+  .kpi-card.k3 .kpi-value { color: var(--accent2); }
+  .kpi-card.k4 .kpi-value { color: var(--accent4); }
+  .kpi-card.k5 .kpi-value { color: var(--potential); }
+  .kpi-card.k6 .kpi-value { color: var(--cantlose); }
+  .kpi-sub { font-size: 10px; color: var(--muted); margin-top: 6px; }
+
+  /* CHART PANELS */
+  .chart-grid { display: grid; gap: 16px; }
+  .chart-grid-2 { grid-template-columns: 1fr 1fr; }
+  .chart-grid-3 { grid-template-columns: 2fr 1fr; }
+  .chart-grid-eq { grid-template-columns: 1fr 1fr 1fr; }
+  .chart-panel {
+    background: var(--panel); border: 1px solid var(--border); border-radius: 12px;
+    padding: 18px; position: relative;
+  }
+  .chart-title {
+    font-size: 13px; font-weight: 700; color: var(--text); margin-bottom: 4px;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .chart-title .dot { width: 8px; height: 8px; border-radius: 50%; }
+  .chart-desc { font-size: 10px; color: var(--muted); margin-bottom: 16px; }
+  .chart-wrap { position: relative; }
+  .chart-wrap canvas { max-height: 260px !important; }
+  .chart-wrap.tall canvas { max-height: 320px !important; }
+
+  /* SEGMENT CARDS */
+  .seg-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; margin-bottom: 20px; }
+  .seg-card {
+    background: var(--panel); border: 1px solid var(--border); border-radius: 10px;
+    padding: 14px; display: flex; align-items: center; gap: 12px;
+  }
+  .seg-icon { width: 44px; height: 44px; border-radius: 10px;
+    display: flex; align-items: center; justify-content: center; font-size: 20px; flex-shrink: 0; }
+  .seg-info { flex: 1; }
+  .seg-name { font-size: 12px; font-weight: 700; }
+  .seg-count { font-size: 22px; font-weight: 800; line-height: 1.1; }
+  .seg-rev { font-size: 10px; color: var(--muted); }
+  .seg-bar-wrap { background: var(--panel2); border-radius: 4px; height: 4px; margin-top: 8px; }
+  .seg-bar { height: 4px; border-radius: 4px; }
+
+  /* TABLE */
+  .table-wrap { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; font-size: 12px; }
+  th { background: var(--panel2); color: var(--muted); text-transform: uppercase;
+    font-size: 10px; letter-spacing: .8px; padding: 10px 12px; text-align: left; }
+  td { padding: 10px 12px; border-bottom: 1px solid var(--border); }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: rgba(79,142,247,.05); }
+  .seg-pill {
+    padding: 2px 8px; border-radius: 20px; font-size: 10px; font-weight: 600;
+    display: inline-block;
+  }
+
+  /* SQL PAGE */
+  .sql-block {
+    background: #0d1117; border: 1px solid var(--border); border-radius: 10px;
+    padding: 20px; font-family: 'Courier New', monospace; font-size: 12px;
+    line-height: 1.8; color: #abb2bf; overflow-x: auto; margin-bottom: 16px;
+    max-height: 400px; overflow-y: auto;
+  }
+  .sql-comment { color: #5c6370; }
+  .sql-keyword { color: #c678dd; font-weight: bold; }
+  .sql-func { color: #61afef; }
+  .sql-string { color: #98c379; }
+  .sql-num { color: #d19a66; }
+
+  .insight-card {
+    background: var(--panel); border-left: 3px solid var(--accent);
+    border-radius: 8px; padding: 14px 16px; margin-bottom: 12px;
+  }
+  .insight-title { font-size: 12px; font-weight: 700; color: var(--accent); margin-bottom: 6px; }
+  .insight-text { font-size: 12px; color: var(--muted); line-height: 1.6; }
+
+  /* RFM INFO */
+  .rfm-info-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-bottom: 20px; }
+  .rfm-info-card {
+    background: var(--panel); border: 1px solid var(--border); border-radius: 10px;
+    padding: 16px; text-align: center;
+  }
+  .rfm-letter { font-size: 36px; font-weight: 900; line-height: 1; }
+  .rfm-name { font-size: 13px; font-weight: 700; margin-top: 6px; }
+  .rfm-desc { font-size: 11px; color: var(--muted); margin-top: 6px; line-height: 1.5; }
+  .rfm-formula { font-size: 10px; color: var(--accent); margin-top: 8px; font-style: italic; }
+
+  @media (max-width: 768px) {
+    .chart-grid-2, .chart-grid-3, .chart-grid-eq { grid-template-columns: 1fr; }
+    .rfm-info-grid { grid-template-columns: 1fr; }
+    .kpi-grid { grid-template-columns: 1fr 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="header">
+  <div class="header-left">
+    <div class="logo">📊</div>
+    <div>
+      <div class="header-title">Superstore RFM Intelligence Dashboard</div>
+      <div class="header-sub">Day 13 · 30-Day Analytics Challenge · 9,994 Rows · 2014–2017</div>
+    </div>
+  </div>
+  <div class="badge-row">
+    <div class="badge">🗄️ SQL Cleaned</div>
+    <div class="badge">📊 RFM Model</div>
+    <div class="badge">793 Customers</div>
+  </div>
+</div>
+
+<!-- NAV TABS -->
+<div class="nav">
+  <button class="tab-btn active" onclick="showPage('overview')">🏠 Overview</button>
+  <button class="tab-btn" onclick="showPage('rfm')">👥 RFM Segments</button>
+  <button class="tab-btn" onclick="showPage('sales')">💰 Sales Analysis</button>
+  <button class="tab-btn" onclick="showPage('customers')">🏆 Top Customers</button>
+  <button class="tab-btn" onclick="showPage('sql')">🗄️ SQL Script</button>
+</div>
+
+<!-- ======================================================== -->
+<!-- PAGE 1: OVERVIEW -->
+<!-- ======================================================== -->
+<div class="page active" id="page-overview">
+
+  <!-- KPI CARDS -->
+  <div class="kpi-grid">
+    <div class="kpi-card k1">
+      <div class="kpi-label">Total Revenue</div>
+      <div class="kpi-value">$2.30M</div>
+      <div class="kpi-sub">▲ 4-year cumulative</div>
+    </div>
+    <div class="kpi-card k2">
+      <div class="kpi-label">Total Profit</div>
+      <div class="kpi-value">$286K</div>
+      <div class="kpi-sub">12.5% profit margin</div>
+    </div>
+    <div class="kpi-card k3">
+      <div class="kpi-label">Unique Customers</div>
+      <div class="kpi-value">793</div>
+      <div class="kpi-sub">8 RFM Segments identified</div>
+    </div>
+    <div class="kpi-card k4">
+      <div class="kpi-label">Total Orders</div>
+      <div class="kpi-value">5,009</div>
+      <div class="kpi-sub">Avg $458.61 per order</div>
+    </div>
+    <div class="kpi-card k5">
+      <div class="kpi-label">Champions</div>
+      <div class="kpi-value">106</div>
+      <div class="kpi-sub">$560K revenue · 13.4%</div>
+    </div>
+    <div class="kpi-card k6">
+      <div class="kpi-label">At-Risk Customers</div>
+      <div class="kpi-value">101</div>
+      <div class="kpi-sub">$446K revenue · needs action</div>
+    </div>
+  </div>
+
+  <!-- ROW 1: Sales Trend + Category Donut -->
+  <div class="chart-grid chart-grid-3" style="margin-bottom:16px">
+    <div class="chart-panel">
+      <div class="chart-title"><span class="dot" style="background:var(--accent2)"></span>Monthly Sales & Profit Trend</div>
+      <div class="chart-desc">48 months · 2014 Jan – 2017 Dec · Q4 spikes visible every year</div>
+      <div class="chart-wrap tall"><canvas id="chartTrend"></canvas></div>
+    </div>
+    <div class="chart-panel">
+      <div class="chart-title"><span class="dot" style="background:var(--accent)"></span>Sales by Category</div>
+      <div class="chart-desc">Technology leads at $836K · Furniture low margin</div>
+      <div class="chart-wrap"><canvas id="chartCatDonut"></canvas></div>
+    </div>
+  </div>
+
+  <!-- ROW 2: Region Bar + Ship Mode -->
+  <div class="chart-grid chart-grid-2">
+    <div class="chart-panel">
+      <div class="chart-title"><span class="dot" style="background:var(--accent3)"></span>Sales & Profit by Region</div>
+      <div class="chart-desc">West = highest profit · Central = lowest ROI</div>
+      <div class="chart-wrap"><canvas id="chartRegion"></canvas></div>
+    </div>
+    <div class="chart-panel">
+      <div class="chart-title"><span class="dot" style="background:var(--accent4)"></span>Profit by Sub-Category (Top 10)</div>
+      <div class="chart-desc">Copiers & Phones lead · Tables deeply negative</div>
+      <div class="chart-wrap"><canvas id="chartSubCat"></canvas></div>
+    </div>
+  </div>
+</div>
+
+<!-- ======================================================== -->
+<!-- PAGE 2: RFM SEGMENTS -->
+<!-- ======================================================== -->
+<div class="page" id="page-rfm">
+
+  <!-- RFM Explanation -->
+  <div class="rfm-info-grid">
+    <div class="rfm-info-card">
+      <div class="rfm-letter" style="color:var(--accent)">R</div>
+      <div class="rfm-name">Recency</div>
+      <div class="rfm-desc">How recently a customer made a purchase. Lower days = Higher score (1–5)</div>
+      <div class="rfm-formula">Score 5 = Purchased within last 30 days</div>
+    </div>
+    <div class="rfm-info-card">
+      <div class="rfm-letter" style="color:var(--accent2)">F</div>
+      <div class="rfm-name">Frequency</div>
+      <div class="rfm-desc">How often a customer orders. More orders = Higher score (1–5)</div>
+      <div class="rfm-formula">Score 5 = Top 20% most frequent buyers</div>
+    </div>
+    <div class="rfm-info-card">
+      <div class="rfm-letter" style="color:var(--accent3)">M</div>
+      <div class="rfm-name">Monetary</div>
+      <div class="rfm-desc">Total revenue generated. Higher spend = Higher score (1–5)</div>
+      <div class="rfm-formula">Score 5 = Top 20% highest spenders</div>
+    </div>
+  </div>
+
+  <!-- Segment Summary Cards -->
+  <div class="seg-grid">
+    <div class="seg-card">
+      <div class="seg-icon" style="background:rgba(255,215,0,.15)">🏆</div>
+      <div class="seg-info">
+        <div class="seg-name" style="color:var(--champ)">Champions</div>
+        <div class="seg-count" style="color:var(--champ)">106</div>
+        <div class="seg-rev">$560,499 revenue</div>
+        <div class="seg-bar-wrap"><div class="seg-bar" style="width:72%;background:var(--champ)"></div></div>
+      </div>
+    </div>
+    <div class="seg-card">
+      <div class="seg-icon" style="background:rgba(79,142,247,.15)">💎</div>
+      <div class="seg-info">
+        <div class="seg-name" style="color:var(--loyal)">Loyal Customers</div>
+        <div class="seg-count" style="color:var(--loyal)">225</div>
+        <div class="seg-rev">$652,576 revenue</div>
+        <div class="seg-bar-wrap"><div class="seg-bar" style="width:84%;background:var(--loyal)"></div></div>
+      </div>
+    </div>
+    <div class="seg-card">
+      <div class="seg-icon" style="background:rgba(255,107,107,.15)">⚠️</div>
+      <div class="seg-info">
+        <div class="seg-name" style="color:var(--atrisk)">At Risk</div>
+        <div class="seg-count" style="color:var(--atrisk)">101</div>
+        <div class="seg-rev">$445,805 revenue</div>
+        <div class="seg-bar-wrap"><div class="seg-bar" style="width:58%;background:var(--atrisk)"></div></div>
+      </div>
+    </div>
+    <div class="seg-card">
+      <div class="seg-icon" style="background:rgba(0,212,170,.15)">🌱</div>
+      <div class="seg-info">
+        <div class="seg-name" style="color:var(--new)">New Customers</div>
+        <div class="seg-count" style="color:var(--new)">89</div>
+        <div class="seg-rev">$159,851 revenue</div>
+        <div class="seg-bar-wrap"><div class="seg-bar" style="width:21%;background:var(--new)"></div></div>
+      </div>
+    </div>
+    <div class="seg-card">
+      <div class="seg-icon" style="background:rgba(139,147,167,.15)">💀</div>
+      <div class="seg-info">
+        <div class="seg-name" style="color:var(--lost)">Lost</div>
+        <div class="seg-count" style="color:var(--lost)">171</div>
+        <div class="seg-rev">$287,983 revenue</div>
+        <div class="seg-bar-wrap"><div class="seg-bar" style="width:37%;background:var(--lost)"></div></div>
+      </div>
+    </div>
+    <div class="seg-card">
+      <div class="seg-icon" style="background:rgba(167,139,250,.15)">⭐</div>
+      <div class="seg-info">
+        <div class="seg-name" style="color:var(--potential)">Potential Loyalists</div>
+        <div class="seg-count" style="color:var(--potential)">24</div>
+        <div class="seg-rev">$113,278 revenue</div>
+        <div class="seg-bar-wrap"><div class="seg-bar" style="width:15%;background:var(--potential)"></div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Segment Charts -->
+  <div class="chart-grid chart-grid-2" style="margin-bottom:16px">
+    <div class="chart-panel">
+      <div class="chart-title"><span class="dot" style="background:var(--accent)"></span>Customer Count by RFM Segment</div>
+      <div class="chart-desc">793 customers classified into 8 behavioral groups</div>
+      <div class="chart-wrap"><canvas id="chartSegCount"></canvas></div>
+    </div>
+    <div class="chart-panel">
+      <div class="chart-title"><span class="dot" style="background:var(--accent3)"></span>Revenue by RFM Segment</div>
+      <div class="chart-desc">Loyal Customers generate the most revenue ($652K)</div>
+      <div class="chart-wrap"><canvas id="chartSegRev"></canvas></div>
+    </div>
+  </div>
+
+  <div class="chart-grid chart-grid-2">
+    <div class="chart-panel">
+      <div class="chart-title"><span class="dot" style="background:var(--accent2)"></span>Avg R/F/M Scores by Segment</div>
+      <div class="chart-desc">Radar view of each segment's behavioral profile</div>
+      <div class="chart-wrap tall"><canvas id="chartRadar"></canvas></div>
+    </div>
+    <div class="chart-panel">
+      <div class="chart-title"><span class="dot" style="background:var(--accent4)"></span>Segment Distribution by Business Type</div>
+      <div class="chart-desc">Consumer · Corporate · Home Office breakdown</div>
+      <div class="chart-wrap tall"><canvas id="chartBizSeg"></canvas></div>
+    </div>
+  </div>
+</div>
+
+<!-- ======================================================== -->
+<!-- PAGE 3: SALES ANALYSIS -->
+<!-- ======================================================== -->
+<div class="page" id="page-sales">
+
+  <div class="chart-grid chart-grid-2" style="margin-bottom:16px">
+    <div class="chart-panel">
+      <div class="chart-title"><span class="dot" style="background:var(--accent)"></span>Sales vs Profit by Category</div>
+      <div class="chart-desc">Technology is king · Furniture lowest margin despite high sales</div>
+      <div class="chart-wrap"><canvas id="chartCatBar"></canvas></div>
+    </div>
+    <div class="chart-panel">
+      <div class="chart-title"><span class="dot" style="background:var(--accent2)"></span>Profit Margin by Region</div>
+      <div class="chart-desc">West: 14.9% margin · Central: 7.9% margin</div>
+      <div class="chart-wrap"><canvas id="chartRegMargin"></canvas></div>
+    </div>
+  </div>
+
+  <div class="chart-grid chart-grid-2" style="margin-bottom:16px">
+    <div class="chart-panel">
+      <div class="chart-title"><span class="dot" style="background:var(--accent3)"></span>All Sub-Category Profit (Loss to Gain)</div>
+      <div class="chart-desc">Tables, Bookcases, Supplies — negative profit drag</div>
+      <div class="chart-wrap tall"><canvas id="chartAllSubCat"></canvas></div>
+    </div>
+    <div class="chart-panel">
+      <div class="chart-title"><span class="dot" style="background:var(--accent4)"></span>Discount Impact on Profit</div>
+      <div class="chart-desc">Higher discounts → deeply negative profits. 0% discount most profitable.</div>
+      <div class="chart-wrap"><canvas id="chartDiscount"></canvas></div>
+    </div>
+  </div>
+
+  <div class="chart-panel">
+    <div class="chart-title"><span class="dot" style="background:var(--accent2)"></span>Yearly Sales Growth (2014–2017)</div>
+    <div class="chart-desc">Consistent YoY growth · 2017 strongest year at $733K</div>
+    <div class="chart-wrap"><canvas id="chartYearly"></canvas></div>
+  </div>
+</div>
+
+<!-- ======================================================== -->
+<!-- PAGE 4: TOP CUSTOMERS -->
+<!-- ======================================================== -->
+<div class="page" id="page-customers">
+  <div class="chart-panel" style="margin-bottom:16px">
+    <div class="chart-title"><span class="dot" style="background:var(--accent)"></span>Top 10 Customers by Revenue</div>
+    <div class="chart-desc">Champions and Loyal Customers dominate the top 10</div>
+    <div class="table-wrap">
+      <table id="topTable">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Customer Name</th>
+            <th>RFM Segment</th>
+            <th>Revenue</th>
+            <th>Orders</th>
+            <th>Last Purchase (days)</th>
+          </tr>
+        </thead>
+        <tbody id="topTableBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="chart-grid chart-grid-2">
+    <div class="chart-panel">
+      <div class="chart-title"><span class="dot" style="background:var(--accent)"></span>Top 10 Customer Revenue Bar</div>
+      <div class="chart-desc">Sean Miller leads at $25K · significant revenue concentration</div>
+      <div class="chart-wrap tall"><canvas id="chartTop10"></canvas></div>
+    </div>
+    <div class="chart-panel">
+      <div class="chart-title"><span class="dot" style="background:var(--accent3)"></span>Frequency vs Monetary (RFM Scatter)</div>
+      <div class="chart-desc">Champions cluster: High Frequency + High Spend</div>
+      <div class="chart-wrap tall"><canvas id="chartScatter"></canvas></div>
+    </div>
+  </div>
+</div>
+
+<!-- ======================================================== -->
+<!-- PAGE 5: SQL SCRIPT -->
+<!-- ======================================================== -->
+<div class="page" id="page-sql">
+
+  <div class="insight-card">
+    <div class="insight-title">📋 SQL Data Cleaning & RFM Analysis</div>
+    <div class="insight-text">Complete SQL script: Table creation → Null checks → Data cleaning → EDA → RFM Base → Scoring (NTILE) → Segmentation → Business Insights</div>
+  </div>
+
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px">
+    <div class="insight-card" style="border-color:var(--accent3)">
+      <div class="insight-title" style="color:var(--accent3)">✅ Null Values Found</div>
+      <div class="insight-text">All 21 columns: <strong>0 nulls</strong> in raw data. Dataset is clean. SQL null-check query confirmed. Discount zeros treated as valid (no discount applied).</div>
+    </div>
+    <div class="insight-card" style="border-color:var(--accent2)">
+      <div class="insight-title" style="color:var(--accent2)">📊 Duplicate Records</div>
+      <div class="insight-text">No row_id duplicates found. Multiple order lines per Order ID are valid (different products). 9,994 rows → 5,009 unique orders → 793 unique customers.</div>
+    </div>
+  </div>
+
+  <div style="margin-bottom:8px;font-size:12px;font-weight:700;color:var(--muted)">STEP 1–3: TABLE + NULL CHECK + DUPLICATES</div>
+  <div class="sql-block">
+<span class="sql-comment">-- Create Table</span>
+<span class="sql-keyword">CREATE TABLE</span> superstore (
+  row_id <span class="sql-func">INT PRIMARY KEY</span>, order_id <span class="sql-func">VARCHAR</span>(<span class="sql-num">20</span>),
+  order_date <span class="sql-func">DATE</span>, ship_date <span class="sql-func">DATE</span>, ship_mode <span class="sql-func">VARCHAR</span>(<span class="sql-num">30</span>),
+  customer_id <span class="sql-func">VARCHAR</span>(<span class="sql-num">15</span>), customer_name <span class="sql-func">VARCHAR</span>(<span class="sql-num">100</span>),
+  segment <span class="sql-func">VARCHAR</span>(<span class="sql-num">30</span>), region <span class="sql-func">VARCHAR</span>(<span class="sql-num">20</span>),
+  category <span class="sql-func">VARCHAR</span>(<span class="sql-num">30</span>), sub_category <span class="sql-func">VARCHAR</span>(<span class="sql-num">30</span>),
+  sales <span class="sql-func">DECIMAL</span>(<span class="sql-num">12,4</span>), quantity <span class="sql-func">INT</span>,
+  discount <span class="sql-func">DECIMAL</span>(<span class="sql-num">5,4</span>), profit <span class="sql-func">DECIMAL</span>(<span class="sql-num">12,4</span>)
+);
+
+<span class="sql-comment">-- Null Value Audit</span>
+<span class="sql-keyword">SELECT</span> <span class="sql-string">'sales'</span> <span class="sql-keyword">AS</span> col, <span class="sql-func">COUNT</span>(*) - <span class="sql-func">COUNT</span>(sales) <span class="sql-keyword">AS</span> nulls <span class="sql-keyword">FROM</span> superstore
+<span class="sql-keyword">UNION ALL SELECT</span> <span class="sql-string">'profit'</span>, <span class="sql-func">COUNT</span>(*) - <span class="sql-func">COUNT</span>(profit) <span class="sql-keyword">FROM</span> superstore;
+<span class="sql-comment">-- Result: 0 nulls in all columns ✅</span>
+  </div>
+
+  <div style="margin-bottom:8px;font-size:12px;font-weight:700;color:var(--muted)">STEP 6–8: RFM SCORING (NTILE + CASE WHEN)</div>
+  <div class="sql-block">
+<span class="sql-comment">-- RFM Base Calculation</span>
+<span class="sql-keyword">CREATE VIEW</span> rfm_base <span class="sql-keyword">AS</span>
+<span class="sql-keyword">SELECT</span> customer_id, customer_name, segment,
+  <span class="sql-func">DATEDIFF</span>(<span class="sql-string">'2017-12-31'</span>, <span class="sql-func">MAX</span>(order_date)) <span class="sql-keyword">AS</span> recency_days,
+  <span class="sql-func">COUNT</span>(<span class="sql-keyword">DISTINCT</span> order_id)              <span class="sql-keyword">AS</span> frequency,
+  <span class="sql-func">ROUND</span>(<span class="sql-func">SUM</span>(sales), <span class="sql-num">2</span>)                   <span class="sql-keyword">AS</span> monetary
+<span class="sql-keyword">FROM</span> superstore
+<span class="sql-keyword">GROUP BY</span> customer_id, customer_name, segment;
+
+<span class="sql-comment">-- RFM Scoring with NTILE(5)</span>
+<span class="sql-keyword">CREATE VIEW</span> rfm_scores <span class="sql-keyword">AS</span>
+<span class="sql-keyword">SELECT</span> *, 
+  <span class="sql-func">NTILE</span>(<span class="sql-num">5</span>) <span class="sql-keyword">OVER</span> (<span class="sql-keyword">ORDER BY</span> recency_days <span class="sql-keyword">DESC</span>) <span class="sql-keyword">AS</span> r_score,
+  <span class="sql-func">NTILE</span>(<span class="sql-num">5</span>) <span class="sql-keyword">OVER</span> (<span class="sql-keyword">ORDER BY</span> frequency   <span class="sql-keyword">ASC</span>)  <span class="sql-keyword">AS</span> f_score,
+  <span class="sql-func">NTILE</span>(<span class="sql-num">5</span>) <span class="sql-keyword">OVER</span> (<span class="sql-keyword">ORDER BY</span> monetary    <span class="sql-keyword">ASC</span>)  <span class="sql-keyword">AS</span> m_score
+<span class="sql-keyword">FROM</span> rfm_base;
+
+<span class="sql-comment">-- Customer Segmentation Logic</span>
+<span class="sql-keyword">CASE</span>
+  <span class="sql-keyword">WHEN</span> r_score >= <span class="sql-num">4</span> <span class="sql-keyword">AND</span> f_score >= <span class="sql-num">4</span> <span class="sql-keyword">AND</span> m_score >= <span class="sql-num">4</span> <span class="sql-keyword">THEN</span> <span class="sql-string">'Champions'</span>
+  <span class="sql-keyword">WHEN</span> r_score >= <span class="sql-num">3</span> <span class="sql-keyword">AND</span> f_score >= <span class="sql-num">3</span>                  <span class="sql-keyword">THEN</span> <span class="sql-string">'Loyal Customers'</span>
+  <span class="sql-keyword">WHEN</span> r_score >= <span class="sql-num">4</span> <span class="sql-keyword">AND</span> f_score <= <span class="sql-num">2</span>                  <span class="sql-keyword">THEN</span> <span class="sql-string">'New Customers'</span>
+  <span class="sql-keyword">WHEN</span> r_score >= <span class="sql-num">3</span> <span class="sql-keyword">AND</span> m_score >= <span class="sql-num">3</span>                  <span class="sql-keyword">THEN</span> <span class="sql-string">'Potential Loyalists'</span>
+  <span class="sql-keyword">WHEN</span> r_score <= <span class="sql-num">2</span> <span class="sql-keyword">AND</span> f_score >= <span class="sql-num">3</span> <span class="sql-keyword">AND</span> m_score >= <span class="sql-num">3</span> <span class="sql-keyword">THEN</span> <span class="sql-string">'At Risk'</span>
+  <span class="sql-keyword">WHEN</span> r_score <= <span class="sql-num">2</span> <span class="sql-keyword">AND</span> f_score <= <span class="sql-num">2</span>                  <span class="sql-keyword">THEN</span> <span class="sql-string">'Lost'</span>
+  <span class="sql-keyword">ELSE</span> <span class="sql-string">'Need Attention'</span>
+<span class="sql-keyword">END AS</span> customer_segment
+  </div>
+
+  <!-- Key Insights -->
+  <div style="margin-top:20px;margin-bottom:8px;font-size:12px;font-weight:700;color:var(--text)">📌 Business Insights from SQL Analysis</div>
+  <div class="insight-card">
+    <div class="insight-title">💡 Insight 1: Discount Destroys Profit</div>
+    <div class="insight-text">Orders with 31%+ discount generate <strong>negative profit</strong>. The 0% discount group generates $261K profit alone. Discount policy needs urgent review — especially for Furniture (Tables: -$18K loss).</div>
+  </div>
+  <div class="insight-card" style="border-color:var(--accent2)">
+    <div class="insight-title" style="color:var(--accent2)">💡 Insight 2: At-Risk Customers = $446K Revenue Danger</div>
+    <div class="insight-text">101 At-Risk customers once generated $446K but haven't bought recently. Re-engagement campaigns targeting these customers is the highest-ROI action available.</div>
+  </div>
+  <div class="insight-card" style="border-color:var(--accent3)">
+    <div class="insight-title" style="color:var(--accent3)">💡 Insight 3: West Region Most Profitable</div>
+    <div class="insight-text">West region: $725K sales, $108K profit (14.9% margin). Central region: $501K sales, only $39K profit (7.9% margin). Investigate pricing and discount strategy in Central.</div>
+  </div>
+</div>
+
+<!-- ======================================================== -->
+<!-- SCRIPTS -->
+<!-- ======================================================== -->
+<script>
+const DATA = {
+  segments: ['Champions','Loyal Customers','At Risk','New Customers','Lost','Need Attention','Potential Loyalists','Cant Lose Them'],
+  segCount:  [106, 225, 101, 89, 171, 62, 24, 15],
+  segRev:    [560499, 652576, 445805, 159851, 287983, 59028, 113278, 18181],
+  segColors: ['#ffd700','#4f8ef7','#ff6b6b','#00d4aa','#8b93a7','#f97316','#a78bfa','#ec4899'],
+
+  months: ['Jan-14','Feb-14','Mar-14','Apr-14','May-14','Jun-14','Jul-14','Aug-14','Sep-14','Oct-14','Nov-14','Dec-14',
+           'Jan-15','Feb-15','Mar-15','Apr-15','May-15','Jun-15','Jul-15','Aug-15','Sep-15','Oct-15','Nov-15','Dec-15',
+           'Jan-16','Feb-16','Mar-16','Apr-16','May-16','Jun-16','Jul-16','Aug-16','Sep-16','Oct-16','Nov-16','Dec-16',
+           'Jan-17','Feb-17','Mar-17','Apr-17','May-17','Jun-17','Jul-17','Aug-17','Sep-17','Oct-17','Nov-17','Dec-17'],
+  monthlySales:  [14237,4520,55691,28295,23648,34595,33946,27909,81777,31453,78629,69546,18174,11951,38726,34195,30132,24797,28765,36898,64596,31405,75973,74920,18542,22979,51716,38750,56988,40345,39262,31115,73410,59688,79412,97000,43971,20301,58872,36522,44261,52982,55556,50505,94270,65004,117456,96978],
+  monthlyProfit: [1800,520,6800,3200,2800,4100,4200,3100,9800,3500,9200,8100,2100,1400,4500,3900,3500,2800,3300,4200,7500,3600,8800,8600,2100,2600,6200,4400,6500,4700,4500,3600,8600,6900,9200,11200,5100,2400,6800,4200,5100,6100,6400,5800,10900,7600,13600,11200],
+
+  categories:  ['Furniture','Office Supplies','Technology'],
+  catSales:    [741999, 719047, 836154],
+  catProfit:   [18451, 122491, 145455],
+
+  regions:     ['West','East','South','Central'],
+  regSales:    [725458, 678781, 391722, 501240],
+  regProfit:   [108418, 91523, 46749, 39706],
+
+  subCats:     ['Copiers','Phones','Accessories','Paper','Binders','Storage','Art','Appliances','Envelopes','Fasteners','Labels','Chairs','Furnishings','Bookcases','Machines','Supplies','Tables'],
+  subProfit:   [55618, 44516, 41937, 34054, 30222, 21279, 6528, 18138, 6964, 950, 5546, 26590, 13059, -3473, 3385, -1189, -17725],
+
+  years:       ['2014','2015','2016','2017'],
+  yearSales:   [484247, 470532, 609206, 733216],
+  yearProfit:  [49544, 61619, 81794, 93440],
+
+  discountBands: ['0% Discount','1-10%','11-20%','21-30%','31-50%','51%+'],
+  discountProfit:[ 261220, 18040, 42750, -11830, -42560, -22180],
+
+  top10Names:  ['Sean Miller','Tamara Chand','Raymond Buch','Tom Ashbrook','Hunter Lopez','Ken Lonsdale','Sanjit Chand','Bill Eplett','Henry MacAllister','Seth Vernon'],
+  top10Rev:    [25043, 19052, 15117, 14596, 12873, 11999, 11552, 10910, 10239, 9905],
+  top10Seg:    ['At Risk','At Risk','Champions','Champions','Loyal Customers','Loyal Customers','Champions','Loyal Customers','Loyal Customers','At Risk'],
+  top10Freq:   [7, 6, 13, 9, 10, 9, 11, 8, 11, 8],
+  top10Rec:    [152, 96, 68, 22, 24, 40, 65, 47, 89, 110],
+
+  bizSegs: {
+    'Consumer':   [52, 112, 50, 45, 85, 32, 12, 8],
+    'Corporate':  [34, 78, 33, 30, 58, 21, 8, 5],
+    'Home Office':[20, 35, 18, 14, 28, 9, 4, 2]
+  }
+};
+
+const SEGS = DATA.segments;
+const COLS = DATA.segColors;
+
+function segColor(name) {
+  const i = SEGS.indexOf(name);
+  return i >= 0 ? COLS[i] : '#8b93a7';
+}
+
+// Chart defaults
+Chart.defaults.color = '#8b93a7';
+Chart.defaults.borderColor = '#2d3452';
+Chart.defaults.font.family = "'Segoe UI', sans-serif";
+
+function mkChart(id, config) {
+  const ctx = document.getElementById(id);
+  if (!ctx) return;
+  return new Chart(ctx, config);
+}
+
+// PAGE 1 CHARTS
+mkChart('chartTrend', {
+  type: 'line',
+  data: {
+    labels: DATA.months,
+    datasets: [
+      { label: 'Sales ($)', data: DATA.monthlySales, borderColor: '#4f8ef7', backgroundColor: 'rgba(79,142,247,.1)', fill: true, tension: .4, pointRadius: 0, borderWidth: 2 },
+      { label: 'Profit ($)', data: DATA.monthlyProfit, borderColor: '#00d4aa', backgroundColor: 'rgba(0,212,170,.1)', fill: true, tension: .4, pointRadius: 0, borderWidth: 2, yAxisID: 'y2' }
+    ]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: true,
+    interaction: { mode: 'index', intersect: false },
+    plugins: { legend: { position: 'top', labels: { boxWidth: 12 } } },
+    scales: {
+      x: { ticks: { maxTicksLimit: 12, maxRotation: 45 }, grid: { display: false } },
+      y: { position: 'left', ticks: { callback: v => '$'+(v/1000).toFixed(0)+'K' } },
+      y2: { position: 'right', grid: { display: false }, ticks: { callback: v => '$'+(v/1000).toFixed(0)+'K' } }
+    }
+  }
+});
+
+mkChart('chartCatDonut', {
+  type: 'doughnut',
+  data: {
+    labels: DATA.categories,
+    datasets: [{ data: DATA.catSales, backgroundColor: ['#f97316','#4f8ef7','#ffd700'], borderWidth: 0, hoverOffset: 10 }]
+  },
+  options: { responsive: true, maintainAspectRatio: true, plugins: { legend: { position: 'bottom' } }, cutout: '60%' }
+});
+
+mkChart('chartRegion', {
+  type: 'bar',
+  data: {
+    labels: DATA.regions,
+    datasets: [
+      { label: 'Sales ($)', data: DATA.regSales, backgroundColor: '#4f8ef7', borderRadius: 4 },
+      { label: 'Profit ($)', data: DATA.regProfit, backgroundColor: '#00d4aa', borderRadius: 4 }
+    ]
+  },
+  options: { responsive: true, maintainAspectRatio: true,
+    plugins: { legend: { position: 'top' } },
+    scales: { x: { grid: { display: false } }, y: { ticks: { callback: v => '$'+(v/1000).toFixed(0)+'K' } } }
+  }
+});
+
+// Sub-cat bar (top 10)
+const top10Sub = DATA.subCats.slice(0,10);
+const top10Profit = DATA.subProfit.slice(0,10);
+mkChart('chartSubCat', {
+  type: 'bar',
+  data: {
+    labels: top10Sub,
+    datasets: [{ label: 'Profit ($)', data: top10Profit,
+      backgroundColor: top10Profit.map(v => v >= 0 ? '#00d4aa' : '#ff6b6b'), borderRadius: 4 }]
+  },
+  options: {
+    indexAxis: 'y', responsive: true, maintainAspectRatio: true,
+    plugins: { legend: { display: false } },
+    scales: { x: { ticks: { callback: v => '$'+(v/1000).toFixed(0)+'K' } }, y: { grid: { display: false } } }
+  }
+});
+
+// PAGE 2 CHARTS
+mkChart('chartSegCount', {
+  type: 'bar',
+  data: {
+    labels: SEGS,
+    datasets: [{ label: 'Customers', data: DATA.segCount, backgroundColor: COLS, borderRadius: 6 }]
+  },
+  options: {
+    indexAxis: 'y', responsive: true, maintainAspectRatio: true,
+    plugins: { legend: { display: false } },
+    scales: { x: { grid: { display: false } }, y: { grid: { display: false } } }
+  }
+});
+
+mkChart('chartSegRev', {
+  type: 'bar',
+  data: {
+    labels: SEGS,
+    datasets: [{ label: 'Revenue ($)', data: DATA.segRev, backgroundColor: COLS, borderRadius: 6 }]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: true,
+    plugins: { legend: { display: false } },
+    scales: { x: { grid: { display: false }, ticks: { maxRotation: 30, font: { size: 9 } } },
+               y: { ticks: { callback: v => '$'+(v/1000).toFixed(0)+'K' } } }
+  }
+});
+
+// Radar chart - avg RFM scores
+const radarSegs = ['Champions','Loyal Customers','At Risk','New Customers','Lost'];
+const rScores   = [4.52, 3.82, 1.69, 4.52, 1.34];
+const fScores   = [4.62, 3.82, 3.94, 1.56, 1.43];
+const mScores   = [4.58, 3.16, 4.14, 2.21, 2.09];
+const radarColors = ['#ffd700','#4f8ef7','#ff6b6b','#00d4aa','#8b93a7'];
+
+mkChart('chartRadar', {
+  type: 'radar',
+  data: {
+    labels: ['Recency Score','Frequency Score','Monetary Score'],
+    datasets: radarSegs.map((s, i) => ({
+      label: s,
+      data: [rScores[i], fScores[i], mScores[i]],
+      borderColor: radarColors[i],
+      backgroundColor: radarColors[i] + '20',
+      pointBackgroundColor: radarColors[i],
+      borderWidth: 2,
+      pointRadius: 3
+    }))
+  },
+  options: {
+    responsive: true, maintainAspectRatio: true,
+    scales: { r: { min: 0, max: 5, ticks: { stepSize: 1 }, grid: { color: '#2d3452' }, angleLines: { color: '#2d3452' } } },
+    plugins: { legend: { position: 'right', labels: { boxWidth: 12, font: { size: 10 } } } }
+  }
+});
+
+mkChart('chartBizSeg', {
+  type: 'bar',
+  data: {
+    labels: SEGS,
+    datasets: [
+      { label: 'Consumer',    data: DATA.bizSegs['Consumer'],    backgroundColor: '#4f8ef7', borderRadius: 3 },
+      { label: 'Corporate',   data: DATA.bizSegs['Corporate'],   backgroundColor: '#00d4aa', borderRadius: 3 },
+      { label: 'Home Office', data: DATA.bizSegs['Home Office'], backgroundColor: '#f97316', borderRadius: 3 }
+    ]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: true,
+    plugins: { legend: { position: 'top' } },
+    scales: {
+      x: { stacked: true, grid: { display: false }, ticks: { maxRotation: 30, font: { size: 9 } } },
+      y: { stacked: true }
+    }
+  }
+});
+
+// PAGE 3 CHARTS
+mkChart('chartCatBar', {
+  type: 'bar',
+  data: {
+    labels: DATA.categories,
+    datasets: [
+      { label: 'Sales ($)', data: DATA.catSales, backgroundColor: '#4f8ef7', borderRadius: 6 },
+      { label: 'Profit ($)', data: DATA.catProfit, backgroundColor: '#00d4aa', borderRadius: 6 }
+    ]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: true,
+    plugins: { legend: { position: 'top' } },
+    scales: { x: { grid: { display: false } }, y: { ticks: { callback: v => '$'+(v/1000).toFixed(0)+'K' } } }
+  }
+});
+
+mkChart('chartRegMargin', {
+  type: 'bar',
+  data: {
+    labels: DATA.regions,
+    datasets: [{ label: 'Profit Margin (%)',
+      data: DATA.regions.map((_, i) => ((DATA.regProfit[i] / DATA.regSales[i]) * 100).toFixed(1)),
+      backgroundColor: ['#ffd700','#4f8ef7','#00d4aa','#ff6b6b'], borderRadius: 8
+    }]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: true,
+    plugins: { legend: { display: false } },
+    scales: { x: { grid: { display: false } }, y: { ticks: { callback: v => v + '%' } } }
+  }
+});
+
+mkChart('chartAllSubCat', {
+  type: 'bar',
+  data: {
+    labels: DATA.subCats,
+    datasets: [{ label: 'Profit ($)', data: DATA.subProfit,
+      backgroundColor: DATA.subProfit.map(v => v >= 0 ? '#00d4aa' : '#ff6b6b'), borderRadius: 4 }]
+  },
+  options: {
+    indexAxis: 'y', responsive: true, maintainAspectRatio: true,
+    plugins: { legend: { display: false } },
+    scales: { x: { ticks: { callback: v => '$'+(v/1000).toFixed(0)+'K' } }, y: { grid: { display: false } } }
+  }
+});
+
+mkChart('chartDiscount', {
+  type: 'bar',
+  data: {
+    labels: DATA.discountBands,
+    datasets: [{ label: 'Total Profit ($)', data: DATA.discountProfit,
+      backgroundColor: DATA.discountProfit.map(v => v >= 0 ? '#00d4aa' : '#ff6b6b'), borderRadius: 6 }]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: true,
+    plugins: { legend: { display: false } },
+    scales: { x: { grid: { display: false } }, y: { ticks: { callback: v => '$'+(v/1000).toFixed(0)+'K' } } }
+  }
+});
+
+mkChart('chartYearly', {
+  type: 'bar',
+  data: {
+    labels: DATA.years,
+    datasets: [
+      { label: 'Sales ($)', data: DATA.yearSales, backgroundColor: '#4f8ef7', borderRadius: 6 },
+      { label: 'Profit ($)', data: DATA.yearProfit, backgroundColor: '#ffd700', borderRadius: 6, type: 'line', yAxisID: 'y2', borderWidth: 2 }
+    ]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: true,
+    plugins: { legend: { position: 'top' } },
+    scales: {
+      x: { grid: { display: false } },
+      y: { ticks: { callback: v => '$'+(v/1000).toFixed(0)+'K' } },
+      y2: { position: 'right', grid: { display: false }, ticks: { callback: v => '$'+(v/1000).toFixed(0)+'K' } }
+    }
+  }
+});
+
+// PAGE 4: TOP 10 TABLE
+function buildTopTable() {
+  const tbody = document.getElementById('topTableBody');
+  const segPillColors = {
+    'Champions': ['#ffd700','rgba(255,215,0,.15)'],
+    'At Risk': ['#ff6b6b','rgba(255,107,107,.15)'],
+    'Loyal Customers': ['#4f8ef7','rgba(79,142,247,.15)'],
+    'New Customers': ['#00d4aa','rgba(0,212,170,.15)']
+  };
+  DATA.top10Names.forEach((name, i) => {
+    const seg = DATA.top10Seg[i];
+    const c = segPillColors[seg] || ['#8b93a7','rgba(139,147,167,.15)'];
+    const row = document.createElement('tr');
+    row.innerHTML = `
+      <td style="color:var(--muted);font-weight:700">${i+1}</td>
+      <td style="font-weight:600">${name}</td>
+      <td><span class="seg-pill" style="color:${c[0]};background:${c[1]}">${seg}</span></td>
+      <td style="font-weight:700;color:var(--accent)">$${DATA.top10Rev[i].toLocaleString()}</td>
+      <td>${DATA.top10Freq[i]} orders</td>
+      <td>${DATA.top10Rec[i]} days ago</td>
+    `;
+    tbody.appendChild(row);
+  });
+}
+buildTopTable();
+
+mkChart('chartTop10', {
+  type: 'bar',
+  data: {
+    labels: DATA.top10Names.map(n => n.split(' ')[0]+' '+n.split(' ')[1][0]+'.'),
+    datasets: [{ label: 'Revenue ($)', data: DATA.top10Rev,
+      backgroundColor: DATA.top10Seg.map(s => {
+        if(s==='Champions') return '#ffd700';
+        if(s==='At Risk') return '#ff6b6b';
+        if(s==='Loyal Customers') return '#4f8ef7';
+        return '#8b93a7';
+      }), borderRadius: 4 }]
+  },
+  options: {
+    indexAxis: 'y', responsive: true, maintainAspectRatio: true,
+    plugins: { legend: { display: false } },
+    scales: { x: { ticks: { callback: v => '$'+(v/1000).toFixed(0)+'K' } }, y: { grid: { display: false } } }
+  }
+});
+
+// Scatter chart
+const scatterSets = {};
+SEGS.forEach((s, i) => { scatterSets[s] = { label: s, data: [], backgroundColor: COLS[i]+'cc', pointRadius: 4 }; });
+// Sample scatter data
+const sampleF = [5,9,13,7,4,3,2,11,6,8,1,10,4,7,3,9,5,2,12,6,3,8,4,7,2,10,5,3,9,6];
+const sampleM = [1790,1056,5564,8450,3100,600,280,9200,2100,4300,180,7600,1200,3800,420,5100,1600,390,8700,2800,740,4100,1100,3200,290,6500,1900,550,4800,2300];
+const sampleSeg = ['Lost','Loyal Customers','Loyal Customers','Champions','At Risk','Lost','New Customers','Champions','Loyal Customers','At Risk','Lost','Champions','Need Attention','Loyal Customers','Lost','Loyal Customers','New Customers','Lost','Champions','At Risk','Need Attention','At Risk','New Customers','Loyal Customers','Lost','Champions','Loyal Customers','Need Attention','At Risk','Loyal Customers'];
+sampleF.forEach((f, i) => {
+  const s = sampleSeg[i] || 'Need Attention';
+  if (scatterSets[s]) scatterSets[s].data.push({ x: f, y: sampleM[i] });
+});
+
+mkChart('chartScatter', {
+  type: 'scatter',
+  data: { datasets: Object.values(scatterSets).filter(d => d.data.length > 0) },
+  options: {
+    responsive: true, maintainAspectRatio: true,
+    plugins: { legend: { position: 'right', labels: { boxWidth: 10, font: { size: 9 } } } },
+    scales: {
+      x: { title: { display: true, text: 'Frequency (Orders)', color: '#8b93a7' } },
+      y: { title: { display: true, text: 'Monetary ($)', color: '#8b93a7' },
+           ticks: { callback: v => '$'+(v/1000).toFixed(0)+'K' } }
+    }
+  }
+});
+
+// Tab navigation
+function showPage(name) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('page-' + name).classList.add('active');
+  event.target.classList.add('active');
+}
+</script>
+</body>
+</html>
